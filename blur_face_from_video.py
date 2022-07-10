@@ -2,6 +2,11 @@ import os
 import argparse
 import cv2
 from detector import Detector
+from moviepy.editor import *
+import blur_utils as blur
+import json
+import numpy as np
+from collections import OrderedDict 
 
 
 def blurBoxes(image, boxes):
@@ -27,6 +32,17 @@ def main(args):
     # assign model path and threshold
     model_path = args.model_path
     threshold = args.threshold
+
+    # בשביל לעשות detection בלבד
+    if args.detection_only:
+        net = cv2.dnn.readNetFromCaffe("input/deploy.prototxt[1].txt", "input/res10_300x300_ssd_iter_140000[1].caffemodel")
+        clip = VideoFileClip(args.input_video)
+        clip = clip.fx( blur.headblur, net, ars.threshold) # try1
+                                      
+        #clip.write_videofile(args["output"])
+        clip.write_videofile(args.output_video)
+        return
+     
 
     # create detection object
     detector = Detector(model_path=model_path, name="detection")
@@ -85,7 +101,7 @@ if __name__ == "__main__":
                         '--input_video',
                         help='Path to your video',
                         type=str,
-                        default='./bezos_vogels.mp4')
+                        default='input/childrenFaces.mp4')
     parser.add_argument('-m',
                         '--model_path',
                         help='Path to .pb model',
@@ -94,12 +110,17 @@ if __name__ == "__main__":
     parser.add_argument('-o',
                         '--output_video',
                         help='Output file path',
-                        default='./bezos_vogels.output.mp4',
+                        default='output/childrenFaces_detection.output.mp4',
                         type=str)
     parser.add_argument('-t',
                         '--threshold',
                         help='Face detection confidence',
                         default=0.7,
+                        type=float)
+    parser.add_argument('-d',
+                        '--detection_only',
+                        help='Perform Detection only Without Blur',
+                        default=True, #True
                         type=float)
     args = parser.parse_args()
 
